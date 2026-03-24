@@ -7,7 +7,7 @@ from pathlib import Path
 
 BOT_TOKEN = ""
 TELEGRAM_LOG_CHAT_ID = 
-TELEGRAM_LOG_THREAD_ID = None
+TELEGRAM_LOG_THREAD_ID = ""
 YTDLP_IGNORE_CONFIG = False
 YOUTUBE_PLAYER_CLIENTS = ("android", "web")
 YOUTUBE_SKIP = ("dash", "hls")
@@ -55,6 +55,17 @@ def _optional_int(name: str) -> int | None:
     if not value:
         return None
     return int(value)
+
+
+def _config_optional_int(value: int | str | None) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    return int(text)
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,9 +149,15 @@ def load_settings() -> Settings:
         youtube_player_clients=YOUTUBE_PLAYER_CLIENTS,
         youtube_skip=YOUTUBE_SKIP,
         log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
-        telegram_log_chat_id=TELEGRAM_LOG_CHAT_ID if TELEGRAM_LOG_CHAT_ID is not None else _optional_int("TELEGRAM_LOG_CHAT_ID"),
+        telegram_log_chat_id=(
+            _config_optional_int(TELEGRAM_LOG_CHAT_ID)
+            if _config_optional_int(TELEGRAM_LOG_CHAT_ID) is not None
+            else _optional_int("TELEGRAM_LOG_CHAT_ID")
+        ),
         telegram_log_thread_id=(
-            TELEGRAM_LOG_THREAD_ID if TELEGRAM_LOG_THREAD_ID is not None else _optional_int("TELEGRAM_LOG_THREAD_ID")
+            _config_optional_int(TELEGRAM_LOG_THREAD_ID)
+            if _config_optional_int(TELEGRAM_LOG_THREAD_ID) is not None
+            else _optional_int("TELEGRAM_LOG_THREAD_ID")
         ),
     )
     settings.ensure_directories()

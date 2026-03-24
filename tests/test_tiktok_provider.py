@@ -42,7 +42,7 @@ def test_tiktok_audio_plan_uses_video_url_instead_of_music_url(providers, tmp_pa
     assert plan.send_method == SendMethod.AUDIO
     assert plan.source_url == session.media_info.extra["play"]
     assert plan.output_path == (tmp_path / "audio" / "media.mp4")
-    assert plan.converted_output_path == (tmp_path / "audio" / "media.mp3")
+    assert plan.converted_output_path == (tmp_path / "audio" / "media.m4a")
     assert plan.cobalt_request is None
     assert plan.headers["Referer"] == "https://www.tiktok.com/"
 

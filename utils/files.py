@@ -148,30 +148,55 @@ def split_media_file(
     raise RuntimeError("Không thể chia nhỏ file để phù hợp giới hạn Telegram.")
 
 
-def extract_audio_to_mp3(input_file: Path, output_file: Path, *, ffmpeg_path: str) -> Path:
+def extract_audio_from_video(input_file: Path, output_file: Path, *, ffmpeg_path: str) -> Path:
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_file.unlink(missing_ok=True)
-    command = [
-        ffmpeg_path,
-        "-y",
-        "-i",
-        str(input_file),
-        "-map",
-        "0:a:0",
-        "-vn",
-        "-c:a",
-        "libmp3lame",
-        "-b:a",
-        "320k",
-        str(output_file),
-    ]
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
-    if result.returncode != 0:
+    copy_output = output_file.with_suffix(".m4a")
+    transcode_output = output_file.with_suffix(".mp3")
+    errors: list[str] = []
+
+    for candidate, codec_args in (
+        (
+            copy_output,
+            [
+                "-map",
+                "0:a:0",
+                "-vn",
+                "-c:a",
+                "copy",
+            ],
+        ),
+        (
+            transcode_output,
+            [
+                "-map",
+                "0:a:0",
+                "-vn",
+                "-c:a",
+                "libmp3lame",
+                "-b:a",
+                "320k",
+            ],
+        ),
+    ):
+        candidate.unlink(missing_ok=True)
+        command = [
+            ffmpeg_path,
+            "-y",
+            "-i",
+            str(input_file),
+            *codec_args,
+            str(candidate),
+        ]
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            validate_output_file(candidate, (candidate.suffix.lower(),))
+            input_file.unlink(missing_ok=True)
+            return candidate
         error_output = (result.stderr or result.stdout or "").strip()
-        raise RuntimeError(error_output or "ffmpeg failed to extract audio")
-    validate_output_file(output_file, (".mp3",))
-    input_file.unlink(missing_ok=True)
-    return output_file
+        errors.append(error_output or f"ffmpeg failed for {candidate.suffix}")
+        candidate.unlink(missing_ok=True)
+
+    raise RuntimeError(" | ".join(errors))
 
 
 def remove_tree(path: Path, *, attempts: int = 5, delay_seconds: float = 0.2) -> None:

@@ -13,7 +13,7 @@ from logging_setup import log_extra
 from models import BotError, DownloadBackend, DownloadedItem, ErrorCode, SendMethod, SessionData
 from providers.base import BaseProvider
 from services.http_client import AsyncHTTPClient
-from utils.files import extract_audio_to_mp3, sanitize_filename, validate_output_file
+from utils.files import extract_audio_from_video, sanitize_filename, validate_output_file
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class DownloadService:
         if plan.converted_output_path is not None:
             try:
                 file_path = await asyncio.to_thread(
-                    extract_audio_to_mp3,
+                    extract_audio_from_video,
                     input_file=file_path,
                     output_file=plan.converted_output_path,
                     ffmpeg_path=self._ffmpeg_path,

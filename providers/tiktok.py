@@ -112,7 +112,7 @@ class TikTokProvider(BaseProvider):
                 send_method=SendMethod.AUDIO,
                 source_url=source_url,
                 output_path=output_dir / "media.mp4",
-                converted_output_path=output_dir / "media.mp3",
+                converted_output_path=output_dir / "media.m4a",
                 headers={
                     "Referer": "https://www.tiktok.com/",
                     "User-Agent": (
@@ -121,9 +121,9 @@ class TikTokProvider(BaseProvider):
                         "Chrome/124.0.0.0 Safari/537.36"
                     ),
                 },
-                allowed_extensions=(".mp3",),
-                caption=f"🎵 <b>{caption_title}</b>",
-                filename_hint=f"{filename_base}.mp3",
+                allowed_extensions=(".m4a", ".mp3"),
+                caption=f"🎵 <b>{caption_title}</b>\n🎚️ Âm thanh gốc từ video",
+                filename_hint=f"{filename_base}.m4a",
                 track_title=ellipsize(media.title, 64),
             )
 

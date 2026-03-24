@@ -234,7 +234,12 @@ def _build_keyboard(media_info: MediaInfo, job_id: str) -> InlineKeyboardMarkup:
             buttons.append(row)
             buttons.append([InlineKeyboardButton("📁 Tải MP4 1080p (File gốc)", callback_data=f"tkdoc:{job_id}")])
     elif media_info.provider == Platform.SOUNDCLOUD:
-        buttons.append([InlineKeyboardButton("🎵 Tải MP3 (320kbps)", callback_data=f"scmus:{job_id}")])
+        if media_info.media_kind == MediaKind.PLAYLIST:
+            buttons.append(
+                [InlineKeyboardButton(f"🎵 Tải {count} Track (Âm thanh gốc)", callback_data=f"scplmus:{job_id}")]
+            )
+        else:
+            buttons.append([InlineKeyboardButton("🎵 Tải Âm Thanh Gốc", callback_data=f"scmus:{job_id}")])
     return InlineKeyboardMarkup(buttons)
 
 
@@ -290,6 +295,24 @@ def _build_preview_caption(media_info: MediaInfo) -> str:
             f"ℹ️ Chi tiết: <code>HD · Không watermark</code>\n"
             f"🌐 Nguồn dữ liệu: {escape_html(str(media_info.extra.get('source_name') or 'TikTok'))}\n\n"
             "👇 <b>Chọn định dạng tải xuống:</b>"
+        )
+    if media_info.provider == Platform.SOUNDCLOUD:
+        if media_info.media_kind == MediaKind.PLAYLIST:
+            total = media_info.total_count or len(media_info.entries)
+            fetched = len(media_info.entries)
+            return (
+                f"🎧 <b>{title}</b>\n\n"
+                f"👤 Nghệ sĩ: <code>{uploader}</code>\n"
+                f"🎼 Số track: <code>{fetched}</code>"
+                + (f" / {total}" if total else "")
+                + "\n\n👇 <b>Chọn định dạng tải xuống:</b>"
+            )
+        return (
+            f"🎧 <b>{title}</b>\n\n"
+            f"👤 Nghệ sĩ: <code>{uploader}</code>\n"
+            f"⏱️ Thời lượng: <code>{escape_html(format_duration(media_info.duration))}</code>\n"
+            f"🎚️ Chất lượng: <code>Âm thanh gốc</code>\n\n"
+            "👇 <b>Nhấn nút bên dưới để tải xuống:</b>"
         )
     return (
         f"🎧 <b>{title}</b>\n\n"

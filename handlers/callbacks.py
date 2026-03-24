@@ -18,7 +18,7 @@ from utils.formatters import escape_html
 
 logger = logging.getLogger(__name__)
 
-PLAYLIST_ACTIONS = {"ytplv", "ytpla", "ytpldoc"}
+PLAYLIST_ACTIONS = {"ytplv", "ytpla", "ytpldoc", "scplmus"}
 ALBUM_ACTIONS = {"img"}
 
 
