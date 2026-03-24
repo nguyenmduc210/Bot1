@@ -79,7 +79,11 @@ class DownloadService:
         try:
             validate_output_file(file_path, plan.allowed_extensions)
         except (FileNotFoundError, ValueError) as exc:
-            raise BotError(ErrorCode.DOWNLOAD_FAILED, "File tải xuống không hợp lệ hoặc bị lỗi.") from exc
+            raise BotError(
+                ErrorCode.DOWNLOAD_FAILED,
+                "File tải xuống không hợp lệ hoặc bị lỗi.",
+                internal_message=str(exc),
+            ) from exc
 
         return DownloadedItem(
             send_method=plan.send_method,

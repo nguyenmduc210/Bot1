@@ -45,8 +45,20 @@ def test_soundcloud_playlist_extract_info(providers, monkeypatch) -> None:
             "thumbnail": "https://cdn.example/cover.jpg",
             "playlist_count": 2,
             "entries": [
-                {"id": "1", "title": "Track 1", "url": "https://soundcloud.com/demo/track-1", "duration": 120},
-                {"id": "2", "title": "Track 2", "url": "https://soundcloud.com/demo/track-2", "duration": 180},
+                {
+                    "id": "1",
+                    "title": "Track 1",
+                    "url": "soundcloud:tracks:1",
+                    "webpage_url": "https://soundcloud.com/demo/track-1",
+                    "duration": 120,
+                },
+                {
+                    "id": "2",
+                    "title": "Track 2",
+                    "url": "soundcloud:tracks:2",
+                    "webpage_url": "https://soundcloud.com/demo/track-2",
+                    "duration": 180,
+                },
             ],
         }
 
@@ -58,6 +70,7 @@ def test_soundcloud_playlist_extract_info(providers, monkeypatch) -> None:
     assert info.available_actions == ["scplmus"]
     assert len(info.entries) == 2
     assert info.total_count == 2
+    assert info.entries[0].url == "https://soundcloud.com/demo/track-1"
 
 
 def test_soundcloud_playlist_plan_uses_entry_url_and_keeps_original_audio(providers, tmp_path: Path) -> None:
@@ -76,5 +89,5 @@ def test_soundcloud_playlist_plan_uses_entry_url_and_keeps_original_audio(provid
     assert plan.source_url == "https://soundcloud.com/demo/track-2"
     assert plan.ydl_options["format"] == "bestaudio/best"
     assert plan.ydl_options["postprocessors"] == []
-    assert ".m4a" in plan.allowed_extensions
+    assert ".mp4" in plan.allowed_extensions
     assert "Âm thanh gốc" in plan.caption

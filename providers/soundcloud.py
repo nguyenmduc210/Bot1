@@ -39,7 +39,7 @@ class SoundCloudProvider(BaseProvider):
                     PlaylistEntry(
                         id=str(entry["id"]),
                         title=entry.get("title") or "Track không có tên",
-                        url=entry.get("url") or entry.get("webpage_url") or "",
+                        url=entry.get("webpage_url") or entry.get("permalink_url") or entry.get("url") or "",
                         duration=entry.get("duration"),
                     )
                 )
@@ -104,7 +104,7 @@ class SoundCloudProvider(BaseProvider):
             source_url=source_url,
             output_template=options["outtmpl"],
             ydl_options=options,
-            allowed_extensions=(".mp3", ".m4a", ".webm", ".opus", ".ogg", ".aac", ".wav", ".flac"),
+            allowed_extensions=(".mp3", ".m4a", ".mp4", ".webm", ".opus", ".ogg", ".aac", ".wav", ".flac"),
             caption=(
                 f"🎵 <b>{escape_html(ellipsize(title, 80))}</b>\n"
                 f"👤 {escape_html(media.uploader or 'Không rõ')}\n"
