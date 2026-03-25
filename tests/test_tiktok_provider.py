@@ -53,7 +53,7 @@ def test_tiktok_extract_info_keeps_audio_action_without_music_link(providers, mo
     async def fake_extract(url: str) -> dict:
         return {
             "id": "721234567890",
-            "title": "Demo TikTok",
+            "title": "Demo TikTok full caption",
             "cover": "https://cdn.example/cover.jpg",
             "play": "https://cdn.example/video.mp4",
             "music": None,
@@ -67,3 +67,4 @@ def test_tiktok_extract_info_keeps_audio_action_without_music_link(providers, mo
 
     assert info.media_kind == MediaKind.VIDEO
     assert info.available_actions == ["vid", "mus", "tkdoc"]
+    assert info.full_caption == "Demo TikTok full caption"

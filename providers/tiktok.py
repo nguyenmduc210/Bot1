@@ -35,6 +35,7 @@ class TikTokProvider(BaseProvider):
             provider=Platform.TIKTOK,
             source_url=url,
             title=data.get("title") or "Nội dung TikTok",
+            full_caption=data.get("title") or None,
             thumbnail=(image_urls[0] if image_urls else data.get("cover")),
             media_kind=MediaKind.ALBUM if is_album else MediaKind.VIDEO,
             available_actions=actions,

@@ -119,6 +119,7 @@ class YouTubeProvider(BaseProvider):
             provider=Platform.YOUTUBE,
             source_url=info.get("webpage_url", url),
             title=info.get("title") or "Video YouTube",
+            full_caption=info.get("description") or info.get("fulltitle") or info.get("title"),
             uploader=info.get("uploader") or info.get("channel") or "Không rõ",
             duration=info.get("duration"),
             thumbnail=best_thumbnail(info),

@@ -13,13 +13,15 @@ from handlers.common import get_services
 from logging_setup import log_extra
 from models import BotError, ErrorCode, SendMethod, SessionData
 from utils.files import remove_tree
-from utils.formatters import escape_html
+from utils.formatters import ellipsize, escape_html
 
 
 logger = logging.getLogger(__name__)
 
 PLAYLIST_ACTIONS = {"ytplv", "ytpla", "ytpldoc", "scplmus"}
 ALBUM_ACTIONS = {"img"}
+CAPTION_ACTION = "cap"
+CAPTION_MESSAGE_LIMIT = 3500
 
 
 @dataclass(slots=True)
@@ -62,28 +64,32 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     route = resolve_callback_route(action)
     provider = services.providers[session.provider.value]
-    status = await query.message.reply_text(
-        "🔄 <b>Đang khởi tạo tiến trình tải...</b>",
-        parse_mode=ParseMode.HTML,
-    )
+    status: Message | None = None
 
     try:
-        if route.is_playlist:
-            await _handle_playlist_action(
-                session=session,
-                action=action,
-                query_message=query.message,
-                status_message=status,
-                context=context,
-            )
+        if action == CAPTION_ACTION:
+            await _handle_caption_action(session=session, query_message=query.message)
         else:
-            await _handle_single_or_album_action(
-                session=session,
-                action=action,
-                query_message=query.message,
-                status_message=status,
-                context=context,
+            status = await query.message.reply_text(
+                "🔄 <b>Đang khởi tạo tiến trình tải...</b>",
+                parse_mode=ParseMode.HTML,
             )
+            if route.is_playlist:
+                await _handle_playlist_action(
+                    session=session,
+                    action=action,
+                    query_message=query.message,
+                    status_message=status,
+                    context=context,
+                )
+            else:
+                await _handle_single_or_album_action(
+                    session=session,
+                    action=action,
+                    query_message=query.message,
+                    status_message=status,
+                    context=context,
+                )
         logger.info(
             "Callback handled",
             extra=log_extra(
@@ -95,7 +101,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             ),
         )
     except BotError as exc:
-        if not route.is_playlist:
+        if not route.is_playlist and action != CAPTION_ACTION:
             await services.stats_store.record_item_processed(
                 user_id=session.user_id,
                 success=False,
@@ -122,9 +128,12 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             action=action,
             job_id=job_id,
         )
-        await _safe_edit(status, f"❌ <b>{exc.user_message}</b>")
+        if status is None:
+            await query.message.reply_text(f"❌ <b>{escape_html(exc.user_message)}</b>", parse_mode=ParseMode.HTML)
+        else:
+            await _safe_edit(status, f"❌ <b>{exc.user_message}</b>")
     except Exception as exc:
-        if not route.is_playlist:
+        if not route.is_playlist and action != CAPTION_ACTION:
             await services.stats_store.record_item_processed(
                 user_id=session.user_id,
                 success=False,
@@ -150,10 +159,67 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             action=action,
             job_id=job_id,
         )
-        await _safe_edit(
-            status,
-            "❌ <b>Bot gặp lỗi hệ thống khi xử lý yêu cầu này.</b>\n\nHãy thử lại sau ít phút.",
+        if status is None:
+            await query.message.reply_text(
+                "❌ <b>Bot gặp lỗi hệ thống khi xử lý yêu cầu này.</b>\n\nHãy thử lại sau ít phút.",
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await _safe_edit(
+                status,
+                "❌ <b>Bot gặp lỗi hệ thống khi xử lý yêu cầu này.</b>\n\nHãy thử lại sau ít phút.",
+            )
+
+
+async def _handle_caption_action(
+    *,
+    session: SessionData,
+    query_message: Message,
+) -> None:
+    caption = (session.media_info.full_caption or "").strip()
+    if not caption:
+        await query_message.reply_text("⚠️ Video này hiện không có caption để gửi.")
+        return
+
+    for text in _build_caption_messages(session):
+        await query_message.reply_text(text, disable_web_page_preview=True)
+
+
+def _build_caption_messages(session: SessionData) -> list[str]:
+    caption = (session.media_info.full_caption or "").strip()
+    if not caption:
+        return []
+    chunks = _split_caption_chunks(caption, max_length=CAPTION_MESSAGE_LIMIT)
+    title = ellipsize(session.media_info.title, 48) or "Video hiện tại"
+    total = len(chunks)
+    messages: list[str] = []
+    for index, chunk in enumerate(chunks, start=1):
+        prefix = (
+            f"📝 Captions · {title}\n\n"
+            if total == 1
+            else f"📝 Captions {index}/{total} · {title}\n\n"
         )
+        messages.append(f"{prefix}{chunk}")
+    return messages
+
+
+def _split_caption_chunks(text: str, *, max_length: int) -> list[str]:
+    normalized = text.strip()
+    if not normalized:
+        return []
+    chunks: list[str] = []
+    remaining = normalized
+    while len(remaining) > max_length:
+        split_at = remaining.rfind("\n", 0, max_length + 1)
+        if split_at < max_length // 2:
+            split_at = remaining.rfind(" ", 0, max_length + 1)
+        if split_at < max_length // 2:
+            split_at = max_length
+        chunks.append(remaining[:split_at].rstrip())
+        remaining = remaining[split_at:].lstrip()
+    if remaining:
+        chunks.append(remaining)
+    return chunks
 
 
 async def _handle_single_or_album_action(

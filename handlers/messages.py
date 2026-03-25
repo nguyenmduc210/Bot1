@@ -240,7 +240,13 @@ def _build_keyboard(media_info: MediaInfo, job_id: str) -> InlineKeyboardMarkup:
             )
         else:
             buttons.append([InlineKeyboardButton("🎵 Tải Âm Thanh Gốc", callback_data=f"scmus:{job_id}")])
+    if _has_full_caption(media_info) and media_info.media_kind != MediaKind.PLAYLIST:
+        buttons.append([InlineKeyboardButton("📝 Captions", callback_data=f"cap:{job_id}")])
     return InlineKeyboardMarkup(buttons)
+
+
+def _has_full_caption(media_info: MediaInfo) -> bool:
+    return bool((media_info.full_caption or "").strip())
 
 
 def _build_preview_caption(media_info: MediaInfo) -> str:

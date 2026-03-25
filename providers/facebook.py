@@ -44,6 +44,7 @@ class FacebookProvider(BaseProvider):
             provider=Platform.FACEBOOK,
             source_url=info.get("webpage_url", url),
             title=info.get("title") or info.get("description", "")[:80] or "Nội dung Facebook",
+            full_caption=info.get("description") or info.get("title"),
             uploader=info.get("uploader") or info.get("channel") or "Không rõ",
             duration=info.get("duration"),
             thumbnail=best_thumbnail(info),

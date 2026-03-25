@@ -80,6 +80,7 @@ class MediaInfo:
     provider: Platform
     source_url: str
     title: str
+    full_caption: str | None = None
     uploader: str | None = None
     duration: int | None = None
     thumbnail: str | None = None
@@ -108,6 +109,7 @@ class MediaInfo:
             provider=Platform(data["provider"]),
             source_url=str(data["source_url"]),
             title=str(data.get("title") or "Không có tiêu đề"),
+            full_caption=data.get("full_caption"),
             uploader=data.get("uploader"),
             duration=int(data["duration"]) if data.get("duration") is not None else None,
             thumbnail=data.get("thumbnail"),
